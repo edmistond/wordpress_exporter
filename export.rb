@@ -38,5 +38,8 @@ end
 
 posts.reject { |p| p.tags.include?('Twitters') || p.comment_count == 0 }.each do |p|
 	puts "#{p.id} - #{p.title}"
+    converter = PandocRuby.new(p.content, :from => :html, :to  => :markdown)
+    p.markdown_content = converter.convert
+    puts p.markdown_content
 end
 
