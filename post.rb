@@ -5,11 +5,11 @@ require 'date'
 module WordpressParser
 
   POST_TEMPLATE = <<EOS
---------
+---
 title: %TITLE%
 post_date: %POST_DATE%
 tags: %TAGS%
---------
+---
 
 EOS
 
@@ -20,16 +20,23 @@ EOS
   def parse_post(post_xml, post_tags)
     post_front_matter = String.new(POST_TEMPLATE)
 
-    post_front_matter['%TITLE%']     = post_xml.css('title').text
-    post_date                        = DateTime.parse(post_xml.css('pubDate').text)
+    post_front_matter['%TITLE%'] = post_xml.css('title').text
+    post_date = DateTime.parse(post_xml.css('pubDate').text)
     post_front_matter['%POST_DATE%'] = post_date.strftime('%Y-%m-%d')
-    post_front_matter['%TAGS%']      = post_tags.join(',') #(post_xml.css('category[nicename]').map(&:text)).join(',')
-
+    post_front_matter['%TAGS%'] = post_tags.join(',')
     file_name = build_file_name(post_xml.css('post_name').text, post_date)
 
-    post_html     = post_xml.css('encoded').text
-    converter     = PandocRuby.new(post_html, :from => :html, :to => :markdown)
+    post_html = post_xml.css('encoded').text
+
+    # wordpress formatted posts don't have br or p tags, but stuff I wrote
+    # in textmate or whatever may so account for that possibility
+    post_html.gsub!(/\n/, '<br>') unless post_html.include?('<p>')
+    converter = PandocRuby.new(post_html, :from => :html, :to => :markdown)
     post_markdown = converter.convert
+
+    # clean up a few annoying things pandoc is doing
+    post_markdown.gsub!(/\\\n/, "\n") # fix linebreaks that are getting escaped too
+    post_markdown.gsub!(/\\\$/, '$') # stop trying to escape dollar signs
 
     puts "writing #{file_name}"
     File.open("output/#{file_name}.md", 'w') do |f|
