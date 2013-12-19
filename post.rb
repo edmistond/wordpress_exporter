@@ -24,7 +24,7 @@ EOS
 
     post_front_matter['%TITLE%'] = post_xml.css('title').text.gsub(/\"/, '\"')
     post_date = DateTime.parse(post_xml.css('pubDate').text)
-    post_front_matter['%POST_DATE%'] = post_date.strftime('%Y-%m-%d')
+    post_front_matter['%POST_DATE%'] = post_date.strftime('%Y-%m-%d %H %M %S')
 
     tag_text = String.new()
     post_tags.each do |t|
